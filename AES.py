@@ -19,17 +19,21 @@ Sbox = [
             ]
 mixmod = [100011011]
 
-def hex_to_bin(hex):
-    return bin(int(hex, 16))[2:].zfill(8)
+def hex_to_bin(hexnum):
+    if type(hexnum) == str:
+        hexnum = (int(hexnum, 16))
+    return bin((hexnum))[2:].zfill(8)
 
-def bin_to_hex(bin):
-    return hex(int(bin, 2))[2:].zfill(2)
+def bin_to_hex(binnum):
+    return hex(int(binnum, 2))[2:].zfill(2)
 
-def hex_to_dec(hex):
-    return int(hex, 16)
+def hex_to_dec(hexnum):
+    if type(hexnum) == str:
+        hexnum = int(hexnum, 16)
+    return (hexnum)
 
-def dec_to_hex(dec):
-    return hex(dec)[2:].zfill(2)
+def dec_to_hex(decnum):
+    return hex(decnum)[2:].zfill(2)
 
 def sub_bytes(matrix):
     for i in range(4):
@@ -37,10 +41,10 @@ def sub_bytes(matrix):
             matrix[i][j] = hex(Sbox[int(matrix[i][j], 16)])[2:].zfill(2)
     return matrix
 
-def xor_matrix(matrix, key):
+def add_round_key(matrix, key):
     for i in range(4):
         for j in range(4):
-            matrix[i][j] = hex(int(matrix[i][j], 16) ^ int(key[i][j], 16))[2:].zfill(2)
+            matrix[i][j] = hex(matrix[i][j] ^ key[i][j])[2:].zfill(2)
     return matrix
 
 def shift_rows(matrix):
@@ -54,38 +58,64 @@ def print_matrix(matrix):
         print (matrix[i])
     print()
 
-def mul2(hex):
-    bin = hex_to_bin(hex)
-    if bin[0] == '0':
-        res = bin[1:] + '0'
+def mul2(hexnum):
+    binnum = hex_to_bin(hexnum)
+    if binnum[0] == '0':
+        res = binnum[1:] + '0'
         res = bin_to_hex(res)
     else:
-        res = hex_to_dec(hex) % 283
+        res = hex_to_dec(hexnum) % 283
         res = dec_to_hex(res)
+    return (int(res, 16))
+
+def mul3(hexnum):
+    return (int(hexnum, 16) ^ (mul2(hexnum)))
+
+
+mix_matrix = [[2,3,1,1], [1,2,3,1], [1,1,2,3], [3,1,1,2]]
+
+def matxcolumna(column):
+    res = ['00', '00', '00', '00']
+    for i in range(4):
+        for j in range(4):
+            total = 0x00
+
+            if mix_matrix[i][j] == 1:
+                total = column[j]
+            elif mix_matrix[i][j] == 2:
+                total = ((total) ^ (mul2(column[j])))
+            elif mix_matrix[i][j] == 3:
+                total = (total ^ mul3(column[j]))
+            
+
+        res[i] = total
     return res
 
-def mul3(hex):
-    hex = mul2(hex)
-    hex = 
-
-def matxcolumna(matrix):
-
+        
+       
 
 
 
 def mix_columns(matrix):
+    res = []
     for i in range(4):
+        res.append(matxcolumna(matrix[i]))
+    return res
+        
         
 
-input_matrix = [['32','88','31', 'e0'], ['43', '5a','31', '37'], ['f6', '30', '98', '07'], ['a8', '8d', 'a2', '34']]
-key_matrix = [['2b', '28', 'ab', '09'], ['7e', 'ae', 'f7', 'cf'], ['15', 'd2', '15', '4f'], ['16', 'a6', '88', '3c']]
+#input_matrix = [['32','88','31', 'e0'], ['43', '5a','31', '37'], ['f6', '30', '98', '07'], ['a8', '8d', 'a2', '34']]
+#key_matrix = [['2b', '28', 'ab', '09'], ['7e', 'ae', 'f7', 'cf'], ['15', 'd2', '15', '4f'], ['16', 'a6', '88', '3c']]
+
+input_matrix = [[0x32, 0x88, 0x31, 0xe0], [0x43, 0x5a, 0x31, 0x37], [0xf6, 0x30, 0x98, 0x07], [0xa8, 0x8d, 0xa2, 0x34]]
+key_matrix = [[0x2b, 0x28, 0xab, 0x09], [0x7e, 0xae, 0xf7, 0xcf], [0x15, 0xd2, 0x15, 0x4f], [0x16, 0xa6, 0x88, 0x3c]]
 
 # sum the values of the matrix with the key matrix
 
 # xor input and key matrix
 
 
-m1 = xor_matrix(input_matrix, key_matrix)
+m1 = add_round_key(input_matrix, key_matrix)
 
 
 
@@ -99,9 +129,11 @@ m1 = shift_rows(m1)
 
 print_matrix(m1)
 
+m1 = mix_columns(m1)
+
+print_matrix(m1)
 
 
 
-for i in range(9):
-    m1 = sub_bytes(m1)
+
 
