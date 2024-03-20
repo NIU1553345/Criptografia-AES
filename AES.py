@@ -1,4 +1,4 @@
-
+# Matriu de sub_bytes
 Sbox = [
             0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
             0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -19,6 +19,7 @@ Sbox = [
             ]
 mixmod = [100011011]
 
+#
 def hex_to_bin(hexnum):
     if type(hexnum) == str:
         hexnum = (int(hexnum, 16))
@@ -60,33 +61,51 @@ def print_matrix(matrix):
 
 def mul2(hexnum):
     binnum = hex_to_bin(hexnum)
+    res = binnum + '0'
     if binnum[0] == '0':
-        res = binnum[1:] + '0'
+        res = res[1:]
         res = bin_to_hex(res)
-    else:
-        res = hex_to_dec(hexnum) % 283
-        res = dec_to_hex(res)
-    return (int(res, 16))
+    if binnum[0] != '0':
+        res = xor_bin(res, "100011011")
 
+    return (res)
 def mul3(hexnum):
-    return (int(hexnum, 16) ^ (mul2(hexnum)))
+    return xor(hexnum, (mul2(hexnum)))
 
+def xor(hexnum1, hexnum2):
+    bin1, bin2 = hex_to_bin(hexnum1), hex_to_bin(hexnum2)
+    #XOR bin1 and bin2
+    res = ''
+    for i in range(8):
+        if bin1[i] == bin2[i]:
+            res += '0'
+        else:
+            res += '1'
+    return bin_to_hex(res)
+
+def xor_bin(bin1, bin2):
+    #XOR bin1 and bin2
+    res = ''
+    for i in range(max(len(bin1), len(bin2))):
+        if bin1[i] == bin2[i]:
+            res += '0'
+        else:
+            res += '1'
+    return bin_to_hex(res)
 
 mix_matrix = [[2,3,1,1], [1,2,3,1], [1,1,2,3], [3,1,1,2]]
 
 def matxcolumna(column):
     res = ['00', '00', '00', '00']
     for i in range(4):
+        total = 0x00
         for j in range(4):
-            total = 0x00
-
             if mix_matrix[i][j] == 1:
-                total = column[j]
+                total = xor(total, (column[j]))
             elif mix_matrix[i][j] == 2:
-                total = ((total) ^ (mul2(column[j])))
+                total = xor(total, mul2(column[j]))
             elif mix_matrix[i][j] == 3:
-                total = (total ^ mul3(column[j]))
-            
+                total = xor(total, mul3(column[j]))            
 
         res[i] = total
     return res
@@ -94,12 +113,19 @@ def matxcolumna(column):
         
        
 
+print(mul2(0xd4))
 
 
 def mix_columns(matrix):
     res = []
+    column = []
     for i in range(4):
-        res.append(matxcolumna(matrix[i]))
+        column = []
+        for j in range(4):
+            column.append(matrix[j][i])
+        res.append(matxcolumna(column))
+    #Trasnspose the matrix res
+    res = [[res[j][i] for j in range(len(res))] for i in range(len(res[0]))]
     return res
         
         
