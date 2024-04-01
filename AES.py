@@ -46,7 +46,7 @@ def sub_bytes(matrix):
 def add_round_key(matrix, key):
     for i in range(4):
         for j in range(4):
-            matrix[i][j] = hex(matrix[i][j] ^ key[i][j])[2:].zfill(2)
+            matrix[i][j] = xor(matrix[i][j], key[i][j])
     return matrix
 
 def shift_rows(matrix):
@@ -56,8 +56,8 @@ def shift_rows(matrix):
     return matrix
 
 def print_matrix(matrix):
-    for i in range(4):
-        print (matrix[i])
+    for i in range(len(matrix)):
+        print(matrix[i])
     print()
 
 def mul2(hexnum):
@@ -126,57 +126,79 @@ def mix_columns(matrix):
         
 #key_expansion for matrix 4x4
 
-Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,]
+Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
+
+for i in range(len(Rcon)):
+    Rcon[i] = dec_to_hex(Rcon[i])
+
+
+
 def key_expansion(key):
-    
+    #Transpose key
+    key = [[key[j][i] for j in range(len(key))] for i in range(len(key[0]))]
+    for i in range(4, 44):
+        if i % 4 == 0:
+            #RotWord
+            temp = key[i-1].copy()
+            temp.append(temp.pop(0))
+            #SubWord
+            for j in range(4):
+                temp[j] = hex(Sbox[int(temp[j], 16)])[2:].zfill(2)
+            #Rcon
+            temp[0] = xor(temp[0], Rcon[int(i/4) - 1])
+            key.append([])
+            for j in range(4):
+                key[i].append(xor(key[i-4][j], temp[j]))
+        else:
+            key.append([])
+            for j in range(4):
+                key[i].append(xor(key[i-4][j], key[i-1][j]))      
+    return key   
 
 
 
-#input_matrix = [['32','88','31', 'e0'], ['43', '5a','31', '37'], ['f6', '30', '98', '07'], ['a8', '8d', 'a2', '34']]
-#key_matrix = [['2b', '28', 'ab', '09'], ['7e', 'ae', 'f7', 'cf'], ['15', 'd2', '15', '4f'], ['16', 'a6', '88', '3c']]
 
 input_matrix = [[0x32, 0x88, 0x31, 0xe0], [0x43, 0x5a, 0x31, 0x37], [0xf6, 0x30, 0x98, 0x07], [0xa8, 0x8d, 0xa2, 0x34]]
 key_matrix = [[0x2b, 0x28, 0xab, 0x09], [0x7e, 0xae, 0xf7, 0xcf], [0x15, 0xd2, 0x15, 0x4f], [0x16, 0xa6, 0x88, 0x3c]]
 
+for i in range(4):
+    for j in range(4):
+        input_matrix[i][j] = dec_to_hex(input_matrix[i][j])
+        key_matrix[i][j] = dec_to_hex(key_matrix[i][j])
+
+
 # sum the values of the matrix with the key matrix
 
 # xor input and key matrix
-
-
 m1 = add_round_key(input_matrix, key_matrix)
 
-
-
-print_matrix(m1)
-
-m1 = sub_bytes(m1)
-
-print_matrix(m1)
-
-m1 = shift_rows(m1)
-
-print_matrix(m1)
-
-m1 = mix_columns(m1)
 
 print_matrix(m1)
 
 print("Key Expansion", key_expansion(key_matrix))
 
 key_matrix = key_expansion(key_matrix)
-
-for i in range(10):
+print_matrix(key_matrix)
+for i in range(1,11):
     print("Round", i)
+
     m1 = sub_bytes(m1)
+    print("Sub Bytes")
     print_matrix(m1)
+
+    print("Shift Rows")
     m1 = shift_rows(m1)
     print_matrix(m1)
-    m1 = mix_columns(m1)
-    print_matrix(m1)
+
+    if i != 10:
+        print("Mix Columns")
+        m1 = mix_columns(m1)
+        print_matrix(m1)
     #Calcular key matrix per aquella round
-    m1 = add_round_key(m1, key_matrix)
+    round_key = key_matrix[i*4: (i+1)*4]
+    round_key = [[round_key[j][i] for j in range(len(round_key))] for i in range(len(round_key[0]))]
+    m1 = add_round_key(m1, round_key)
+    print("Add Round Key")
     print_matrix(m1)
 
+print_matrix(m1)
