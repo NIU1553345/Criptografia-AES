@@ -1,4 +1,107 @@
-# Matriu de sub_bytes
+'''
+En aquest codi es pot trobar l'algoritme AES implementat en Python. 
+El codi es trobar dividit en 4 parts:
+    1. Funcions auxiliars
+    2. Matrius de l'algoritme
+    3. Funcions de l'algoritme
+    4. Main
+
+'''
+
+
+
+##########################################################################################
+'''
+Funcions auxiliar
+'''
+##########################################################################################
+
+
+
+def num_to_bin(num):
+    '''
+    Transforma un número (ja sigui decimal o hexadecimal) a binari.
+
+    Args:
+        hexnum (int / str): Número (decimal o hexadecimal)
+    Returns:
+        str: Número binari
+    '''
+    #En el cas de que el número sigui hexadecimal cal transformar-lo a enter
+    if type(num) == str:
+        num = int(num, 16)
+
+    #Transforma el número a binari, agafa apartir de la 3a posició del str perquè al ser binari surt 0b
+    # i en el cas de que no tingui 8 bits, s'omplen amb 0's
+    return bin((num))[2:].zfill(8)
+
+
+def bin_to_hex(binnum):
+    '''
+    Transforma un número binari a hexadecimal.
+
+    Args:
+        binnum (str): Número binari
+    Returns:
+        str: Número hexadecimal
+    '''
+    return hex(int(binnum, 2))[2:].zfill(2)
+
+
+def dec_to_hex(decnum):
+    '''
+    Transforma un número decimal a hexadecimal.
+
+    Args:
+        decnum (int): Número decimal
+    Returns:
+        str: Número hexadecimal
+    '''
+    return hex(decnum)[2:].zfill(2)
+
+def xor(hexnum1, hexnum2):
+    '''
+    Fa la operació XOR entre dos números hexadecimals.
+
+    Args:
+        hexnum1 (str): Número hexadecimal
+        hexnum2 (str): Número hexadecimal
+    Returns:
+        str: Resultat de la operació XOR en hexadecimal
+    ''' 
+    #Transforma els dos números a binari perquè sigui més fàcil fer l'operació
+    bin1, bin2 = num_to_bin(hexnum1), num_to_bin(hexnum2)
+    #Guarda el str resultant en la variable res
+    res = ''
+    #Recorre els dos números binaris i si els dos bits són iguals, i fa la operació XOR en cada bit
+    for i in range(8):
+        if bin1[i] == bin2[i]:
+            res += '0'
+        else:
+            res += '1'
+    return bin_to_hex(res)
+
+def xor_bin(bin1, bin2):
+    #XOR bin1 and bin2
+    res = ''
+    for i in range(max(len(bin1), len(bin2))):
+        if bin1[i] == bin2[i]:
+            res += '0'
+        else:
+            res += '1'
+    return bin_to_hex(res)
+
+
+
+##########################################################################################
+'''
+Matrius de l'algoritme AES
+'''
+##########################################################################################
+
+
+
+#Sbox que encara que es pugui veure com hexadecimal, es tracta de una llista de 256 enters 
 Sbox = [
             0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
             0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -17,27 +120,37 @@ Sbox = [
             0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF,
             0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
             ]
-mixmod = [100011011]
 
 
-#
-def hex_to_bin(hexnum):
-    if type(hexnum) == str:
-        hexnum = (int(hexnum, 16))
-    return bin((hexnum))[2:].zfill(8)
+#Cada valor és un tipus de multiplicació per tant ens convé tenir-ho en enter
+mix_matrix = [[2,3,1,1], [1,2,3,1], [1,1,2,3], [3,1,1,2]]
 
-def bin_to_hex(binnum):
-    return hex(int(binnum, 2))[2:].zfill(2)
 
-def hex_to_dec(hexnum):
-    if type(hexnum) == str:
-        hexnum = int(hexnum, 16)
-    return (hexnum)
+#Rcon és una llista de enters que s'utilitza per la key expansion però en aquest cas si que cal tenir-la en hexadecimal
+Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
+#Cada de Rcon element el transformem a hexadecimal
+for i in range(len(Rcon)):
+    Rcon[i] = dec_to_hex(Rcon[i])
 
-def dec_to_hex(decnum):
-    return hex(decnum)[2:].zfill(2)
+
+
+##########################################################################################
+'''
+Funcions de l'algoritme AES
+'''
+##########################################################################################
+
+
 
 def sub_bytes(matrix):
+    '''
+    Substitueix cada valor de la matriu per el valor que li correspongui en la Sbox.
+
+    Args:
+        matrix (list): Matriu 4x4
+    Returns:
+        matrix: Matriu 4x4 amb els valors substituits
+    '''
     for i in range(4):
         for j in range(4):
             matrix[i][j] = hex(Sbox[int(matrix[i][j], 16)])[2:].zfill(2)
@@ -61,12 +174,13 @@ def print_matrix(matrix):
     print()
 
 def mul2(hexnum):
-    binnum = hex_to_bin(hexnum)
+    binnum = num_to_bin(hexnum)
     res = binnum + '0'
     if binnum[0] == '0':
         res = res[1:]
         res = bin_to_hex(res)
     if binnum[0] != '0':
+        #Fa el mòdul de x^8 + x^4 + x^3 + x + 1
         res = xor_bin(res, "100011011")
 
     return (res)
@@ -74,7 +188,7 @@ def mul3(hexnum):
     return xor(hexnum, (mul2(hexnum)))
 
 def xor(hexnum1, hexnum2):
-    bin1, bin2 = hex_to_bin(hexnum1), hex_to_bin(hexnum2)
+    bin1, bin2 = num_to_bin(hexnum1), num_to_bin(hexnum2)
     #XOR bin1 and bin2
     res = ''
     for i in range(8):
@@ -93,8 +207,6 @@ def xor_bin(bin1, bin2):
         else:
             res += '1'
     return bin_to_hex(res)
-
-mix_matrix = [[2,3,1,1], [1,2,3,1], [1,1,2,3], [3,1,1,2]]
 
 def matxcolumna(column):
     res = ['00', '00', '00', '00']
@@ -126,12 +238,6 @@ def mix_columns(matrix):
         
 #key_expansion for matrix 4x4
 
-Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
-
-for i in range(len(Rcon)):
-    Rcon[i] = dec_to_hex(Rcon[i])
-
-
 
 def key_expansion(key):
     #Transpose key
@@ -157,6 +263,13 @@ def key_expansion(key):
 
 
 
+##########################################################################################
+'''
+Main
+'''
+##########################################################################################
+
+
 
 input_matrix = [[0x32, 0x88, 0x31, 0xe0], [0x43, 0x5a, 0x31, 0x37], [0xf6, 0x30, 0x98, 0x07], [0xa8, 0x8d, 0xa2, 0x34]]
 key_matrix = [[0x2b, 0x28, 0xab, 0x09], [0x7e, 0xae, 0xf7, 0xcf], [0x15, 0xd2, 0x15, 0x4f], [0x16, 0xa6, 0x88, 0x3c]]
@@ -170,35 +283,38 @@ for i in range(4):
 # sum the values of the matrix with the key matrix
 
 # xor input and key matrix
-m1 = add_round_key(input_matrix, key_matrix)
+print("Initial Matrix")
+print_matrix(input_matrix)
 
-
-print_matrix(m1)
-
-print("Key Expansion", key_expansion(key_matrix))
+print("Round 0:")
+matrix = add_round_key(input_matrix, key_matrix)
+print("Add Round Key")
+print_matrix(matrix)
 
 key_matrix = key_expansion(key_matrix)
 print_matrix(key_matrix)
+
 for i in range(1,11):
     print("Round", i)
 
-    m1 = sub_bytes(m1)
+    matrix = sub_bytes(matrix)
     print("Sub Bytes")
-    print_matrix(m1)
+    print_matrix(matrix)
 
     print("Shift Rows")
-    m1 = shift_rows(m1)
-    print_matrix(m1)
+    matrix = shift_rows(matrix)
+    print_matrix(matrix)
 
     if i != 10:
         print("Mix Columns")
-        m1 = mix_columns(m1)
-        print_matrix(m1)
-    #Calcular key matrix per aquella round
+        matrix = mix_columns(matrix)
+        print_matrix(matrix)
+
+    #Agafar només la part de la clau que pertoca per aquella round
     round_key = key_matrix[i*4: (i+1)*4]
     round_key = [[round_key[j][i] for j in range(len(round_key))] for i in range(len(round_key[0]))]
-    m1 = add_round_key(m1, round_key)
+    matrix = add_round_key(matrix, round_key)
     print("Add Round Key")
-    print_matrix(m1)
+    print_matrix(matrix)
 
-print_matrix(m1)
+print_matrix(matrix)
