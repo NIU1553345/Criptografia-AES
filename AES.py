@@ -19,6 +19,7 @@ Sbox = [
             ]
 mixmod = [100011011]
 
+
 #
 def hex_to_bin(hexnum):
     if type(hexnum) == str:
@@ -110,11 +111,6 @@ def matxcolumna(column):
         res[i] = total
     return res
 
-        
-       
-
-print(mul2(0xd4))
-
 
 def mix_columns(matrix):
     res = []
@@ -128,7 +124,16 @@ def mix_columns(matrix):
     res = [[res[j][i] for j in range(len(res))] for i in range(len(res[0]))]
     return res
         
-        
+#key_expansion for matrix 4x4
+
+Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,]
+def key_expansion(key):
+    
+
+
 
 #input_matrix = [['32','88','31', 'e0'], ['43', '5a','31', '37'], ['f6', '30', '98', '07'], ['a8', '8d', 'a2', '34']]
 #key_matrix = [['2b', '28', 'ab', '09'], ['7e', 'ae', 'f7', 'cf'], ['15', 'd2', '15', '4f'], ['16', 'a6', '88', '3c']]
@@ -159,7 +164,19 @@ m1 = mix_columns(m1)
 
 print_matrix(m1)
 
+print("Key Expansion", key_expansion(key_matrix))
 
+key_matrix = key_expansion(key_matrix)
 
-
+for i in range(10):
+    print("Round", i)
+    m1 = sub_bytes(m1)
+    print_matrix(m1)
+    m1 = shift_rows(m1)
+    print_matrix(m1)
+    m1 = mix_columns(m1)
+    print_matrix(m1)
+    #Calcular key matrix per aquella round
+    m1 = add_round_key(m1, key_matrix)
+    print_matrix(m1)
 
