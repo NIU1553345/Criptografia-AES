@@ -59,6 +59,7 @@ def dec_to_hex(decnum):
     '''
     return hex(decnum)[2:].zfill(2)
 
+
 def xor(hexnum1, hexnum2):
     '''
     Fa la operació XOR entre dos números hexadecimals.
@@ -71,9 +72,11 @@ def xor(hexnum1, hexnum2):
     ''' 
     #Transforma els dos números a binari perquè sigui més fàcil fer l'operació
     bin1, bin2 = num_to_bin(hexnum1), num_to_bin(hexnum2)
+    
     #Guarda el str resultant en la variable res
     res = ''
-    #Recorre els dos números binaris i si els dos bits són iguals, i fa la operació XOR en cada bit
+
+    #Recorre els dos números binaris posició a posició i fa la operació XOR en cada bit
     for i in range(8):
         if bin1[i] == bin2[i]:
             res += '0'
@@ -81,10 +84,21 @@ def xor(hexnum1, hexnum2):
             res += '1'
     return bin_to_hex(res)
 
+
 def xor_bin(bin1, bin2):
-    #XOR bin1 and bin2
+    '''
+    Fa la operació XOR entre dos números binaris.
+
+    Args:
+        bin1 (str): Número binari
+        bin2 (str): Número binari
+    Returns:
+        str: Resultat de la operació XOR en hexadecimal
+    '''
+    #Guarda el str resultant en la variable res
     res = ''
-    for i in range(max(len(bin1), len(bin2))):
+    #Recorre els dos números binaris posició a posició i fa la operació XOR en cada bit
+    for i in range(len(bin1)):
         if bin1[i] == bin2[i]:
             res += '0'
         else:
@@ -92,10 +106,65 @@ def xor_bin(bin1, bin2):
     return bin_to_hex(res)
 
 
+def print_matrix(matrix):
+    '''
+    Imprimeix la matriu per pantalla perquè quedi amb forma matricial.
+    
+    Args:
+        matrix (list): Matriu de dimensions qualsevol
+    '''
+    #Imprimeix cada fila de la matriu
+    for i in range(len(matrix)):
+        print(matrix[i])
+    print()
+
+
+def mul2(hexnum):
+    '''
+    Multiplica per 2 un número hexadecimal. Aquesta operació es correspon a desplaçar tot el nombre binari 1 cap a l'esquerra.
+
+    Args:
+        hexnum (str): Número hexadecimal
+    Returns:
+        str: Resultat de la multiplicació per 2 en hexadecimal
+    '''
+    #Cal tenir el nombre en binari
+    binnum = num_to_bin(hexnum)
+
+    #Afeguim un 0 al final que és el mateix que desplaçar tots els valors 1 cap a l'esquerra
+    res = binnum + '0'
+
+    #En cas de que estigui dins del mòdul es pasa a hexadecimal i es retorna
+    if binnum[0] == '0':
+        res = res[1:]
+        res = bin_to_hex(res)
+
+    #En cas contrari, que tingui un 1, s'ha de aplicar el mòdul
+    else:
+        #Fa el mòdul de x^8 + x^4 + x^3 + x + 1 fent un xor amb amb aquest valor
+        res = xor_bin(res, "100011011")
+
+    return (res)
+
+
+def mul3(hexnum):
+    '''
+    Multiplica per 3 un número hexadecimal. Aquesta operació es correspon a desplaçar 
+    tot el nombre binari 1 cap a l'esquerra i fer la suma (xor) amb el hexadecimal incial.
+
+    Args:
+        hexnum (str): Número hexadecimal
+    Returns:
+        str: Resultat de la multiplicació per 3 en hexadecimal
+    '''
+    #Multipliquem per dos i sumem l'hexadecimal inicial
+    return xor(hexnum, (mul2(hexnum)))
+
+
 
 ##########################################################################################
 '''
-Matrius de l'algoritme AES
+Matrius de l'algoritme
 '''
 ##########################################################################################
 
@@ -136,10 +205,72 @@ for i in range(len(Rcon)):
 
 ##########################################################################################
 '''
-Funcions de l'algoritme AES
+Funcions de l'algoritme
 '''
 ##########################################################################################
 
+
+
+def add_round_key(matrix, key):
+    '''
+    Fa l'operació xor per cada element de la matriu amb la clau
+
+    Args:
+        matrix (list): Matriu 4x4 d'elements hexadecimals
+        key (list): Matriu 4x4 d'elements hexadecimals
+    Returns:
+        matrix (list): Matriu 4x4 d'elements hexadecimals resultants de l'operació
+    '''
+    #Recorre tots els elements de cada matriu i fa l'operació xor amb el seu corresponent en l'altre
+    for i in range(4):
+        for j in range(4):
+            matrix[i][j] = xor(matrix[i][j], key[i][j])
+    return matrix
+
+
+def key_expansion(key):
+    '''
+    Fa l'expansió de la clau per poder fer les rondes de l'algoritme amb la clau corresponent.
+
+    Args:
+        key (list): Matriu 4x4 d'elements hexadecimals
+    Returns:
+        key (list): Matriu 44x4 d'elements hexadecimals
+    '''
+    #Transposa la matriu per poder fer les operacions més fàcilment amb les columnes com a files
+    key = [[key[j][i] for j in range(len(key))] for i in range(len(key[0]))]
+    
+    #Bucle de 4 a 44 perquè ja tenim les 4 primeres columnes de la clau i volem les 40 següents on cada 4 iteracions serà una no va ronda (4 elements * 10 rondes)
+    for i in range(4, 44):
+
+        #En el cas de que sigui la primera columna de la ronda (RotWord)
+        if i % 4 == 0:
+
+            #Ell primer elemnt pasa a ser l'últim
+            temp = key[i-1].copy()
+            temp.append(temp.pop(0))
+
+            #Aquest array s'ha de substituir per la Sbox
+            for j in range(4):
+                temp[j] = hex(Sbox[int(temp[j], 16)])[2:].zfill(2)
+            
+            #Aquest array (només el primer element) s'ha de fer un xor amb el Rcon corresponent a la ronda
+            temp[0] = xor(temp[0], Rcon[int(i/4) - 1])
+            key.append([])
+
+            #La columna resultant s'afegueix a la matriu de la clau
+            for j in range(4):
+                key[i].append(xor(key[i-4][j], temp[j]))
+        
+        #En el cas de no sigui la primera columna de la ronda
+        else:
+
+            #Es fa un xor amb la columna que li correspondria en la ronda anterior
+            key.append([])
+            for j in range(4):
+                #Es busca el calor que li pertoca en la clau de la ronda anterior
+                key[i].append(xor(key[i-4][j], key[i-1][j]))      
+    return key   
 
 
 def sub_bytes(matrix):
@@ -147,71 +278,50 @@ def sub_bytes(matrix):
     Substitueix cada valor de la matriu per el valor que li correspongui en la Sbox.
 
     Args:
-        matrix (list): Matriu 4x4
+        matrix (list): Matriu 4x4 amb elements en hexadecimals
     Returns:
-        matrix: Matriu 4x4 amb els valors substituits
+        matrix: Matriu 4x4 amb els valors substituits amb elements en hexadecimals
     '''
+    #Dos bucles de 4 per recorrer tota la matriu
     for i in range(4):
         for j in range(4):
+            #Busca en la Sbox el valor que li correspon per l'ement de la posició de la matriu i el substitueix
             matrix[i][j] = hex(Sbox[int(matrix[i][j], 16)])[2:].zfill(2)
     return matrix
 
-def add_round_key(matrix, key):
-    for i in range(4):
-        for j in range(4):
-            matrix[i][j] = xor(matrix[i][j], key[i][j])
-    return matrix
 
 def shift_rows(matrix):
+    '''
+    Desplaça les posicions de les files de la matriu segons la ronda que sigui (1a fila 0, 2a fila 1, 3a fila 2, 4a fila 3).
+    
+    Args:
+        matrix (list): Matriu 4x4 amb elements en hexadecimals
+    Returns:
+        matrix: Matriu 4x4 amb les files desplaçades amb elements en hexadecimals
+    '''
+    #No cal recorre totes les posicions de la matriu
     for i in range(4):
+        #Depenent de la fila que li toqui despaça "i" cops la fila
         for j in range(i):
             matrix[i].append(matrix[i].pop(0))
     return matrix
 
-def print_matrix(matrix):
-    for i in range(len(matrix)):
-        print(matrix[i])
-    print()
-
-def mul2(hexnum):
-    binnum = num_to_bin(hexnum)
-    res = binnum + '0'
-    if binnum[0] == '0':
-        res = res[1:]
-        res = bin_to_hex(res)
-    if binnum[0] != '0':
-        #Fa el mòdul de x^8 + x^4 + x^3 + x + 1
-        res = xor_bin(res, "100011011")
-
-    return (res)
-def mul3(hexnum):
-    return xor(hexnum, (mul2(hexnum)))
-
-def xor(hexnum1, hexnum2):
-    bin1, bin2 = num_to_bin(hexnum1), num_to_bin(hexnum2)
-    #XOR bin1 and bin2
-    res = ''
-    for i in range(8):
-        if bin1[i] == bin2[i]:
-            res += '0'
-        else:
-            res += '1'
-    return bin_to_hex(res)
-
-def xor_bin(bin1, bin2):
-    #XOR bin1 and bin2
-    res = ''
-    for i in range(max(len(bin1), len(bin2))):
-        if bin1[i] == bin2[i]:
-            res += '0'
-        else:
-            res += '1'
-    return bin_to_hex(res)
 
 def matxcolumna(column):
-    res = ['00', '00', '00', '00']
+    '''
+    Funció auxiliar de la funció mix_matrix per fer les operacions que li pertoquen a la columna. Realitza una multiplicació de matrius de 4x1 * 4x4
+    
+    Args:
+        column (list): Llista de 4 elements hexadecimals
+    Returns:
+        res (list): Llista de 4 elements hexadecimals
+    '''
+    #Creem un vector de 4 posicions que serbirà de columan pel resultat
+    res = ['', '', '', '']
+
+    #Recorre tota la columna i fa un sumatori en la variable total per acabar amb el resultat que li pertoqui de la multiplicació del columna per la matriu
     for i in range(4):
-        total = 0x00
+        total = 0
         for j in range(4):
             if mix_matrix[i][j] == 1:
                 total = xor(total, (column[j]))
@@ -219,48 +329,36 @@ def matxcolumna(column):
                 total = xor(total, mul2(column[j]))
             elif mix_matrix[i][j] == 3:
                 total = xor(total, mul3(column[j]))            
-
+        
+        #Al final de cada valor de la columna es guarda en l'array final
         res[i] = total
     return res
 
 
 def mix_columns(matrix):
+    '''
+    Multiplica cada columna de la matriu per la matriu mix_matrix (es troba en l'apartat de matrius).
+
+    Args:
+        matrix (list): Matriu 4x4 amb elements en hexadecimals
+    Returns:
+        res (list): Matriu 4x4 amb elements en hexadecimals
+    '''
     res = []
     column = []
+    #Recorre tota la matriu, per guardar columna per columna, i multiplicar-la per matriu mix_matrix
     for i in range(4):
         column = []
         for j in range(4):
             column.append(matrix[j][i])
+        
+        #Guarda la columna resultant de la operació en la matriu "res"
         res.append(matxcolumna(column))
-    #Trasnspose the matrix res
+    
+    #Transposa la matriu resultant perquè la hem transposat anteriorment al guardar columna a columna
     res = [[res[j][i] for j in range(len(res))] for i in range(len(res[0]))]
     return res
         
-#key_expansion for matrix 4x4
-
-
-def key_expansion(key):
-    #Transpose key
-    key = [[key[j][i] for j in range(len(key))] for i in range(len(key[0]))]
-    for i in range(4, 44):
-        if i % 4 == 0:
-            #RotWord
-            temp = key[i-1].copy()
-            temp.append(temp.pop(0))
-            #SubWord
-            for j in range(4):
-                temp[j] = hex(Sbox[int(temp[j], 16)])[2:].zfill(2)
-            #Rcon
-            temp[0] = xor(temp[0], Rcon[int(i/4) - 1])
-            key.append([])
-            for j in range(4):
-                key[i].append(xor(key[i-4][j], temp[j]))
-        else:
-            key.append([])
-            for j in range(4):
-                key[i].append(xor(key[i-4][j], key[i-1][j]))      
-    return key   
-
 
 
 ##########################################################################################
@@ -270,41 +368,46 @@ Main
 ##########################################################################################
 
 
-
+#Inicialitzem tant la matriu que volem codificar com la clau en hexadecimals però que python enten com a enters
 input_matrix = [[0x32, 0x88, 0x31, 0xe0], [0x43, 0x5a, 0x31, 0x37], [0xf6, 0x30, 0x98, 0x07], [0xa8, 0x8d, 0xa2, 0x34]]
 key_matrix = [[0x2b, 0x28, 0xab, 0x09], [0x7e, 0xae, 0xf7, 0xcf], [0x15, 0xd2, 0x15, 0x4f], [0x16, 0xa6, 0x88, 0x3c]]
 
+#Com volem aquestes matrius amb els valors en hexadecimals transformem element a element a hexadecimal
 for i in range(4):
     for j in range(4):
         input_matrix[i][j] = dec_to_hex(input_matrix[i][j])
         key_matrix[i][j] = dec_to_hex(key_matrix[i][j])
 
-
-# sum the values of the matrix with the key matrix
-
-# xor input and key matrix
+#Per veure la matriu de partida per pantalla
 print("Initial Matrix")
 print_matrix(input_matrix)
 
+#Comença la ronda 0 amb la primera operació que és "add_round_key" amb la clau inicial
 print("Round 0:")
 matrix = add_round_key(input_matrix, key_matrix)
 print("Add Round Key")
 print_matrix(matrix)
 
+#Calcula l'exansió de la clau i la guarda en la variable per poder-la utilitzar en futures iteracions
 key_matrix = key_expansion(key_matrix)
+print("Extended key")
 print_matrix(key_matrix)
 
+#Comença un bucle del 10 iteracions on es farà tota l'encriptació per acabar amb la matriu encriptada final
 for i in range(1,11):
     print("Round", i)
 
+    #Sempre comença fent el "sub bytes"
     matrix = sub_bytes(matrix)
     print("Sub Bytes")
     print_matrix(matrix)
 
+    #Seguidament sempre fa "shift rows"
     print("Shift Rows")
     matrix = shift_rows(matrix)
     print_matrix(matrix)
 
+    #Nomès en el cas de que no estigui en la decena ronda es fa "mix columns"
     if i != 10:
         print("Mix Columns")
         matrix = mix_columns(matrix)
@@ -312,9 +415,16 @@ for i in range(1,11):
 
     #Agafar només la part de la clau que pertoca per aquella round
     round_key = key_matrix[i*4: (i+1)*4]
+
+    #La transposa
     round_key = [[round_key[j][i] for j in range(len(round_key))] for i in range(len(round_key[0]))]
+    
+    #Aplica el "round_key" 
     matrix = add_round_key(matrix, round_key)
     print("Add Round Key")
     print_matrix(matrix)
 
+#Mostra per pantalla la matriu final
+print("Matriu final!")
 print_matrix(matrix)
+
