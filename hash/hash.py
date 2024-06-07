@@ -16,7 +16,7 @@ def uab_md5_explica(message: str, num_bits: int) -> Optional[int]:
     return message5
 
 def uab_md5(message: str, num_bits: int) -> Optional[int]:
-    return int(hashlib.md5(message.encode()).hexdigest()[:num_bits // 4], 16)
+    return int(hashlib.md5(message.encode()).hexdigest()[:num_bits], 16)
 
 print(uab_md5("hello", 23) ) # 907060870
 
