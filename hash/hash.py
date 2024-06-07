@@ -20,6 +20,8 @@ def uab_md5(message: str, num_bits: int) -> Optional[int]:
 
 print(uab_md5("hello", 23) ) # 907060870
 
+print(uab_md5_explica("hello", 16) )
+
 def second_preimage_md5(message: str, num_bits: int) -> Optional[str]:
     primera_imatge = uab_md5(message, num_bits)
     for i in range(1000000):
@@ -45,8 +47,8 @@ def collision_md5(num_bits: int) -> Tuple[str, str]:
 
 print(collision_md5(32))
 
-for i in range (8, 96, 8):
-    print(i, "bits:")
-    print("second preimage: ", second_preimage_md5("hello", i))
-    print("collision: ", collision_md5(i))
+# for i in range (8, 96, 8):
+#     print(i, "bits:")
+#     print("second preimage: ", second_preimage_md5("hello", i))
+#     print("collision: ", collision_md5(i))
     
