@@ -22,14 +22,15 @@ if __name__ == '__main__':
 
     # Generate a RSA key
     student_key = RSA.generate(RSA_KEY_SIZE)
-    # print(student_key.export_key().decode('utf-8'))
-
+    print(student_key.export_key().decode('utf-8'))
+    
     # Export the public key
-    # student_pub_key = student_key.publickey()
-    # print(student_pub_key.export_key().decode('utf-8'))
+    student_pub_key = student_key.publickey()
+    print(student_pub_key.export_key('OpenSSH').decode('utf-8'))
+
 
     # Hash the message to sign
-    str_to_sign = "s"   
+    str_to_sign = "#CHANGE GRADE TO 10#"   
     h = PrunedSHA256Hash().new(str_to_sign.encode('utf-8'))
 
     # Sign the hash of the message and get b64 encoded signature
